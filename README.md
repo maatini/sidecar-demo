@@ -28,18 +28,25 @@ Ziel der Demo:
 ```mermaid
 flowchart LR
     Browser --> Frontend
-    Frontend --> Envoy
-    Envoy -->|/api/authorize| Sidecar
-    Sidecar --> Backend
-    Sidecar --> WireMock
+
+    Frontend -->|/api/*| Envoy
+    Envoy -->|ext_authz: /api/authorize| Sidecar
+    Sidecar -->|Rollen holen| RoleService[Role-Enhance-Service]
+    Sidecar -->|Policy-Entscheidung| OPA
+    Envoy -->|allow| Backend
+
+    Frontend -->|/userinfo direkt| Backend
+
     Frontend -->|optional spaeter| Keycloak
+    Sidecar -->|Token-Validierung| Keycloak
 ```
 
 In Worten:
-- Das Frontend schickt API-Requests an Envoy.
-- Envoy fragt den Sidecar, ob der Request erlaubt ist.
-- Der Sidecar erlaubt oder verweigert.
-- Nur bei "erlaubt" wird zum Backend weitergeleitet.
+- Das Frontend schickt `/api/*`-Requests an Envoy.
+- Envoy fragt den Sidecar via `ext_authz`, ob der Request erlaubt ist.
+- Der Sidecar validiert den Token (Keycloak), holt Rollen (Role-Enhance-Service) und fragt OPA.
+- Nur bei "erlaubt" leitet Envoy zum Backend weiter.
+- `/userinfo` geht vom Frontend **direkt** zum Backend — ohne Envoy und Sidecar.
 
 ---
 
