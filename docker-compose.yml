@@ -23,6 +23,8 @@ services:
     environment:
       KEYCLOAK_ADMIN: admin
       KEYCLOAK_ADMIN_PASSWORD: admin
+      KC_HOSTNAME_URL: http://localhost:8081
+      KC_HOSTNAME_STRICT: "false"
     volumes:
       - ./keycloak/realm-export.json:/opt/keycloak/data/import/realm-export.json:ro
     ports:
@@ -65,7 +67,6 @@ services:
       QUARKUS_CACHE_ENABLED: "false"
       AUTH_ENABLED: "true"
       AUTHZ_ENABLED: "true"
-      ROLE_ENHANCE_URL: http://role-enhance-service:8080
       ROLES_SERVICE_URL: http://role-enhance-service:8080
       OPA_MODE: external
       OPA_URL: http://opa:8181

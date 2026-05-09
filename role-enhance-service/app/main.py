@@ -1,39 +1,34 @@
+import os
+from pathlib import Path
+
+import yaml
 from fastapi import FastAPI
 
 app = FastAPI(title="role-enhance-service", version="1.0.0")
 
+_PROFILES_PATH = Path(os.getenv("PROFILES_PATH", "/app/profiles.yaml"))
 
-ROLE_PROFILES = {
-    "demo-user": {
-        "roles": ["customer", "tier-gold"],
-        "permissions": ["orders:read", "profile:read"],
-        "department": "digital-sales",
-        "region": "eu-central",
-    },
-    "alice": {
-        "roles": ["customer"],
-        "permissions": ["orders:read", "profile:read"],
-        "department": "retail",
-        "region": "eu-west",
-    },
-    "admin": {
-        "roles": ["admin", "support"],
-        "permissions": ["orders:read", "profile:read", "admin:read", "admin:write"],
-        "department": "platform",
-        "region": "global",
-    },
+_FALLBACK_PROFILE = {
+    "roles": ["customer"],
+    "permissions": ["orders:read"],
+    "department": "unknown",
+    "region": "unknown",
 }
 
 
+def _load_profiles() -> dict:
+    if not _PROFILES_PATH.exists():
+        return {}
+    with _PROFILES_PATH.open() as f:
+        data = yaml.safe_load(f)
+    return data.get("profiles", {})
+
+
+_ROLE_PROFILES: dict = _load_profiles()
+
+
 def profile_for(user_id: str) -> dict:
-    if user_id in ROLE_PROFILES:
-        return ROLE_PROFILES[user_id]
-    return {
-        "roles": ["customer"],
-        "permissions": ["orders:read"],
-        "department": "unknown",
-        "region": "unknown",
-    }
+    return _ROLE_PROFILES.get(user_id, _FALLBACK_PROFILE)
 
 
 @app.get("/health")

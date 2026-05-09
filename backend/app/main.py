@@ -7,7 +7,6 @@ from fastapi import FastAPI, Request, Response, status
 
 app = FastAPI(title="sidecar-demo-backend", version="1.0.0")
 ROLE_ENHANCE_URL = os.getenv("ROLE_ENHANCE_SERVICE_URL", "http://role-enhance-service:8080")
-OPA_URL = os.getenv("OPA_URL", "http://opa:8181")
 
 
 def auth_headers(request: Request) -> dict:
@@ -109,61 +108,4 @@ async def userinfo(request: Request) -> dict:
             "iss": "wiremock-demo",
         },
         "auth_headers_seen": auth_headers(request),
-    }
-
-
-@app.get("/api/authorize/{requested_path:path}")
-async def authorize_passthrough(requested_path: str, request: Request, response: Response) -> dict:
-    normalized = f"/{requested_path}".replace("//", "/")
-    method = request.headers.get("x-forwarded-method", request.method).lower()
-    user_id = extract_user_id_from_bearer(request.headers.get("authorization"))
-    roles, _, _ = await role_profile(user_id)
-    auth_context = {
-        "user_id": user_id,
-        "roles": roles,
-        "method": method,
-        "path": normalized,
-    }
-    enriched_roles_header = ",".join(roles)
-    auth_context_header = json.dumps(auth_context, separators=(",", ":"))
-
-    allow = False
-    deny_reason = "missing_required_role_for_resource"
-    try:
-        payload = {
-            "input": {
-                "roles": roles,
-                "method": method,
-                "path": normalized,
-            }
-        }
-        async with httpx.AsyncClient(timeout=2.0) as client:
-            opa_res = await client.post(f"{OPA_URL}/v1/data/sidecar/authz/allow", json=payload)
-            if opa_res.status_code == 200:
-                allow = bool(opa_res.json().get("result", False))
-            else:
-                deny_reason = "opa_unavailable_or_invalid_response"
-    except Exception:
-        deny_reason = "opa_request_failed"
-
-    if not allow:
-        response.status_code = status.HTTP_403_FORBIDDEN
-        return {
-            "allow": False,
-            "reason": deny_reason,
-            "path": normalized,
-            "roles": roles,
-            "user_id": user_id,
-            "x_auth_user_id": user_id,
-            "x_enriched_roles": enriched_roles_header,
-            "x_auth_context": auth_context_header,
-        }
-    return {
-        "allow": allow,
-        "path": normalized,
-        "roles": roles,
-        "user_id": user_id,
-        "x_auth_user_id": user_id,
-        "x_enriched_roles": enriched_roles_header,
-        "x_auth_context": auth_context_header,
     }

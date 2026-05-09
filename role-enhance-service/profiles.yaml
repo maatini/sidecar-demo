@@ -1,0 +1,31 @@
+profiles:
+  demo-user:
+    roles:
+      - customer
+      - tier-gold
+    permissions:
+      - orders:read
+      - profile:read
+    department: digital-sales
+    region: eu-central
+
+  alice:
+    roles:
+      - customer
+    permissions:
+      - orders:read
+      - profile:read
+    department: retail
+    region: eu-west
+
+  admin:
+    roles:
+      - admin
+      - support
+    permissions:
+      - orders:read
+      - profile:read
+      - admin:read
+      - admin:write
+    department: platform
+    region: global

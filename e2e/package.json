@@ -1,0 +1,14 @@
+{
+  "name": "sidecar-demo-e2e",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "test": "playwright test",
+    "test:api": "playwright test tests/backend tests/role-service tests/opa-policy tests/envoy",
+    "test:ui": "playwright test tests/frontend",
+    "report": "playwright show-report"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.49.0"
+  }
+}

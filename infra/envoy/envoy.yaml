@@ -24,7 +24,7 @@ static_resources:
                               "@type": type.googleapis.com/envoy.extensions.filters.http.ext_authz.v3.ExtAuthzPerRoute
                               disabled: true
                           route:
-                            cluster: auth_sidecar
+                            cluster: backend
                             prefix_rewrite: "/api/userinfo"
                         - match:
                             prefix: "/api/"
@@ -41,7 +41,7 @@ static_resources:
                         allow_partial_message: true
                       http_service:
                         server_uri:
-                          uri: http://auth-sidecar:8000
+                          uri: http://auth-sidecar:8080
                           cluster: auth_sidecar
                           timeout: 2s
                         path_prefix: /api/authorize

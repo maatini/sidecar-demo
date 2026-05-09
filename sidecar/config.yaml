@@ -1,5 +1,7 @@
+# Referenzkonfiguration — die tatsächlichen Werte zur Laufzeit kommen aus
+# docker-compose.yml (Umgebungsvariablen) bzw. den Kubernetes-Manifests.
 server:
-  listenAddress: 0.0.0.0:8000
+  listenAddress: 0.0.0.0:8080
 
 oidc:
   issuerUrl: http://keycloak:8080/realms/sidecar-demo
