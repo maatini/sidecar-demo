@@ -1,0 +1,23 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: any-existing-service
+spec:
+  template:
+    spec:
+      containers:
+        - name: k8s-auth-sidecar
+          image: ghcr.io/maatini/k8s-auth-sidecar:latest
+          env:
+            - name: QUARKUS_OIDC_AUTH_SERVER_URL
+              value: http://keycloak:8080/realms/sidecar-demo
+            - name: QUARKUS_OIDC_CLIENT_ID
+              value: demo-frontend
+            - name: OIDC_AUTH_SERVER_URL
+              value: http://keycloak:8080/realms/sidecar-demo
+            - name: OIDC_CLIENT_ID
+              value: demo-frontend
+            - name: OIDC_TOKEN_ISSUER
+              value: http://localhost:8081/realms/sidecar-demo
+          ports:
+            - containerPort: 8080

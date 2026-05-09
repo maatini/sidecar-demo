@@ -1,0 +1,62 @@
+{
+  "$schema": "https://raw.githubusercontent.com/jetpack-io/devbox/main/.schema/devbox.schema.json",
+  "packages": [
+    "git@latest",
+    "jq@latest",
+    "yq@latest",
+    "nodejs@22",
+    "python@3.12",
+    "docker@latest",
+    "docker-compose@latest",
+    "kubectl@latest",
+    "kustomize@latest",
+    "kind@latest",
+    "k3d@latest",
+    "gh@latest"
+  ],
+  "shell": {
+    "init_hook": [
+      "export PYTHONDONTWRITEBYTECODE=1",
+      "export PIP_DISABLE_PIP_VERSION_CHECK=1",
+      "export NEXT_TELEMETRY_DISABLED=1",
+      "export COMPOSE_DOCKER_CLI_BUILD=1",
+      "export DOCKER_BUILDKIT=1",
+      "export PATH=\"$PWD/.devbox/bin:$PATH\"",
+      "mkdir -p .devbox/bin",
+      "if [ ! -x .devbox/bin/opa ]; then curl -fsSL -o .devbox/bin/opa https://openpolicyagent.org/downloads/latest/opa_darwin_arm64_static && chmod +x .devbox/bin/opa; fi",
+      "echo \"Devbox aktiv: node=$(node -v), python=$(python3 --version | awk '{print $2}'), kubectl=$(kubectl version --client --output=yaml | yq '.clientVersion.gitVersion')\""
+    ],
+    "scripts": {
+      "doctor": [
+        "echo \"== Toolchain ==\"",
+        "node -v",
+        "python3 --version",
+        "docker --version",
+        "docker compose version",
+        "kubectl version --client",
+        "kind version",
+        "k3d version",
+        "opa version | head -n 1"
+      ],
+      "setup": [
+        "cd frontend && npm install",
+        "cd ../backend && python3 -m venv .venv && . .venv/bin/activate && pip install -r requirements.txt"
+      ],
+      "up": [
+        "docker compose up --build -d"
+      ],
+      "down": [
+        "docker compose down"
+      ],
+      "logs": [
+        "docker compose logs -f --tail=150"
+      ],
+      "k8s:apply": [
+        "kubectl apply -k infra/k8s/overlays/development"
+      ],
+      "k8s:delete": [
+        "kubectl delete -k infra/k8s/overlays/development"
+      ]
+    }
+  }
+}

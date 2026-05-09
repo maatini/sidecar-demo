@@ -1,0 +1,29 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: frontend
+  template:
+    metadata:
+      labels:
+        app: frontend
+    spec:
+      containers:
+        - name: frontend
+          image: sidecar-demo/frontend:latest
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: NEXT_PUBLIC_KEYCLOAK_URL
+              value: http://localhost:8081
+            - name: NEXT_PUBLIC_KEYCLOAK_REALM
+              value: sidecar-demo
+            - name: NEXT_PUBLIC_KEYCLOAK_CLIENT_ID
+              value: demo-frontend
+            - name: NEXT_PUBLIC_GATEWAY_URL
+              value: http://localhost:18080
+          ports:
+            - containerPort: 3000

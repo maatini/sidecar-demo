@@ -13,10 +13,11 @@ Ziel der Demo:
 
 - `frontend/`: Web-UI mit Next.js 15 (TypeScript, Tailwind)
 - `backend/`: einfacher FastAPI-Service mit Demo-Endpunkten
+- `role-enhance-service/`: Rollen- und Berechtigungs-Anreicherung pro User
 - `infra/envoy/`: Envoy als API-Gateway (mit `ext_authz`)
 - `sidecar/`: Sidecar-nahe Policy-/Config-Dateien
 - `keycloak/`: Realm-Import fuer spaetere echte OIDC-Tests
-- `wiremock/`: Mock-Services fuer den stabilen Demo-Mode
+- `wiremock/`: OIDC-Mock-Service fuer den stabilen Demo-Mode
 - `infra/k8s/`: Kubernetes-Manifeste mit Kustomize (`base` + `overlays`)
 - `docker-compose.yml`: lokaler Start mit einem Befehl
 
@@ -49,7 +50,8 @@ Der Stack ist aktuell absichtlich auf einen sehr stabilen Demo-Mode gestellt.
 Das bedeutet:
 - `NEXT_PUBLIC_DEMO_MODE=true` im Frontend
 - Sidecar mit `AUTH_ENABLED=false` und `AUTHZ_ENABLED=false`
-- OIDC- und Rollen-Daten kommen aus WireMock
+- OIDC-Daten kommen aus WireMock
+- Rollen/Berechtigungen kommen aus dem Role-Enhance-Service
 - Erlaubt/Verweigert wird in der Demo ueber spezielle Backend-Endpunkte sichtbar gemacht
 
 Warum ist das gut?
@@ -74,7 +76,7 @@ docker compose up --build
 - Backend direkt: [http://localhost:8082](http://localhost:8082)
 - Keycloak: [http://localhost:8081](http://localhost:8081)
 - WireMock OIDC: [http://localhost:8091](http://localhost:8091)
-- WireMock Roles: [http://localhost:8089](http://localhost:8089)
+- Role-Enhance-Service: [http://localhost:8089](http://localhost:8089)
 
 ### 3) Demo im Browser
 
@@ -103,6 +105,17 @@ Erwartung im Demo-Mode:
 - `/userinfo` -> `200`
 - `/api/orders` -> `200`
 - `/api/admin` -> `403`
+
+### Role-Enhance-Service direkt testen
+
+```bash
+curl -s http://localhost:8089/api/v1/users/demo-user/roles | jq
+curl -s http://localhost:8089/api/v1/users/admin/permissions | jq
+```
+
+Beispielhafte Werte:
+- `demo-user` -> Rollen wie `customer`, `tier-gold`
+- `admin` -> Rollen wie `admin`, `support` und erweiterte Admin-Permissions
 
 ---
 

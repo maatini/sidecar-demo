@@ -1,0 +1,53 @@
+{
+  "realm": "sidecar-demo",
+  "enabled": true,
+  "displayName": "Sidecar Demo Realm",
+  "roles": {
+    "realm": [
+      { "name": "customer", "description": "Regular customer user" },
+      { "name": "admin", "description": "Administrator user" }
+    ]
+  },
+  "clients": [
+    {
+      "clientId": "demo-frontend",
+      "name": "Demo Frontend",
+      "enabled": true,
+      "publicClient": true,
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": true,
+      "redirectUris": [
+        "http://localhost:3000/*"
+      ],
+      "webOrigins": [
+        "http://localhost:3000"
+      ],
+      "attributes": {
+        "pkce.code.challenge.method": "S256"
+      },
+      "defaultClientScopes": ["profile", "email", "roles"]
+    }
+  ],
+  "users": [
+    {
+      "username": "alice",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Alice",
+      "lastName": "Customer",
+      "email": "alice@example.com",
+      "credentials": [{ "type": "password", "value": "alice123", "temporary": false }],
+      "realmRoles": ["customer"]
+    },
+    {
+      "username": "admin",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Ada",
+      "lastName": "Admin",
+      "email": "admin@example.com",
+      "credentials": [{ "type": "password", "value": "admin123", "temporary": false }],
+      "realmRoles": ["admin"]
+    }
+  ]
+}

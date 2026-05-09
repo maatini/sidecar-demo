@@ -1,0 +1,103 @@
+services:
+  wiremock-oidc:
+    image: wiremock/wiremock:3.13.2
+    command:
+      - "--global-response-templating"
+      - "--verbose"
+    volumes:
+      - ./wiremock/oidc:/home/wiremock
+    ports:
+      - "8091:8080"
+
+  role-enhance-service:
+    build:
+      context: ./role-enhance-service
+    ports:
+      - "8089:8080"
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.0
+    command:
+      - start-dev
+      - --import-realm
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+    volumes:
+      - ./keycloak/realm-export.json:/opt/keycloak/data/import/realm-export.json:ro
+    ports:
+      - "8081:8080"
+
+  backend:
+    build:
+      context: ./backend
+    ports:
+      - "8082:8080"
+
+  opa:
+    image: openpolicyagent/opa:0.63.0-static
+    command:
+      - "run"
+      - "--server"
+      - "--addr=0.0.0.0:8181"
+      - "--log-level=debug"
+      - "/policies/authz.rego"
+    volumes:
+      - ./sidecar/policies:/policies:ro
+    ports:
+      - "8181:8181"
+
+  auth-sidecar:
+    image: ghcr.io/maatini/k8s-auth-sidecar:latest
+    depends_on:
+      - keycloak
+      - role-enhance-service
+      - opa
+    environment:
+      QUARKUS_OIDC_AUTH_SERVER_URL: http://keycloak:8080/realms/sidecar-demo
+      QUARKUS_OIDC_CLIENT_ID: demo-frontend
+      OIDC_AUTH_SERVER_URL: http://keycloak:8080/realms/sidecar-demo
+      OIDC_CLIENT_ID: demo-frontend
+      OIDC_TENANT_ENABLED: "true"
+      OIDC_TOKEN_ISSUER: http://localhost:8081/realms/sidecar-demo
+      QUARKUS_OIDC_TOKEN_ISSUER: http://localhost:8081/realms/sidecar-demo
+      QUARKUS_OIDC_JWKS_RESOLVE_EARLY: "false"
+      QUARKUS_CACHE_ENABLED: "false"
+      AUTH_ENABLED: "true"
+      AUTHZ_ENABLED: "true"
+      ROLE_ENHANCE_URL: http://role-enhance-service:8080
+      ROLES_SERVICE_URL: http://role-enhance-service:8080
+      OPA_MODE: external
+      OPA_URL: http://opa:8181
+      OPA_DECISION_PATH: /v1/data/sidecar/authz/allow
+      PROXY_TARGET_HOST: backend
+      PROXY_TARGET_PORT: "8080"
+      QUARKUS_LOG_LEVEL: DEBUG
+    ports:
+      - "8090:8080"
+
+  envoy:
+    image: envoyproxy/envoy:v1.31-latest
+    depends_on:
+      - backend
+      - auth-sidecar
+    volumes:
+      - ./infra/envoy/envoy.yaml:/etc/envoy/envoy.yaml:ro
+    command: ["envoy", "-c", "/etc/envoy/envoy.yaml", "--service-cluster", "sidecar-demo"]
+    ports:
+      - "18080:8080"
+
+  frontend:
+    build:
+      context: ./frontend
+    environment:
+      NEXT_PUBLIC_KEYCLOAK_URL: http://localhost:8081
+      NEXT_PUBLIC_KEYCLOAK_REALM: sidecar-demo
+      NEXT_PUBLIC_KEYCLOAK_CLIENT_ID: demo-frontend
+      NEXT_PUBLIC_GATEWAY_URL: http://localhost:18080
+      NEXT_PUBLIC_DEMO_MODE: "false"
+    depends_on:
+      - envoy
+      - keycloak
+    ports:
+      - "3000:3000"

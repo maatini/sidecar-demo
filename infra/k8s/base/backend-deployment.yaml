@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: backend
+  template:
+    metadata:
+      labels:
+        app: backend
+    spec:
+      serviceAccountName: default
+      containers:
+        - name: backend
+          image: sidecar-demo/backend:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 5
+        - name: auth-sidecar
+          image: ghcr.io/maatini/k8s-auth-sidecar:latest
+          env:
+            - name: QUARKUS_OIDC_AUTH_SERVER_URL
+              value: http://keycloak:8080/realms/sidecar-demo
+            - name: QUARKUS_OIDC_CLIENT_ID
+              value: demo-frontend
+            - name: OIDC_AUTH_SERVER_URL
+              value: http://keycloak:8080/realms/sidecar-demo
+            - name: OIDC_CLIENT_ID
+              value: demo-frontend
+            - name: OIDC_TOKEN_ISSUER
+              value: http://localhost:8081/realms/sidecar-demo
+          ports:
+            - containerPort: 8080

@@ -1,0 +1,18 @@
+{
+  "request": {
+    "method": "GET",
+    "urlPath": "/realms/master/.well-known/openid-configuration"
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "jsonBody": {
+      "issuer": "http://wiremock-oidc:8080/realms/master",
+      "jwks_uri": "http://wiremock-oidc:8080/realms/master/protocol/openid-connect/certs",
+      "token_endpoint": "http://wiremock-oidc:8080/realms/master/protocol/openid-connect/token",
+      "userinfo_endpoint": "http://wiremock-oidc:8080/realms/master/protocol/openid-connect/userinfo"
+    }
+  }
+}

@@ -1,0 +1,19 @@
+server:
+  listenAddress: 0.0.0.0:8000
+
+oidc:
+  issuerUrl: http://keycloak:8080/realms/sidecar-demo
+  jwksUrl: http://keycloak:8080/realms/sidecar-demo/protocol/openid-connect/certs
+  userinfoUrl: http://keycloak:8080/realms/sidecar-demo/protocol/openid-connect/userinfo
+  expectedAudience: demo-frontend
+
+policy:
+  engine: opa
+  regoFile: /etc/sidecar/policies/authz.rego
+  query: data.sidecar.authz.allow
+  denyReasonQuery: data.sidecar.authz.deny_reason
+
+headers:
+  userIdHeader: X-Auth-User-Id
+  rolesHeader: X-Enriched-Roles
+  authContextHeader: X-Auth-Context
