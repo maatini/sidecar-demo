@@ -27,26 +27,28 @@ Ziel der Demo:
 
 ```mermaid
 flowchart LR
+    Browser -->|OIDC Login| Keycloak
     Browser --> Frontend
 
-    Frontend -->|/api/*| Envoy
-    Envoy -->|ext_authz: /api/authorize| Sidecar
-    Sidecar -->|Rollen holen| RoleService[Role-Enhance-Service]
-    Sidecar -->|Policy-Entscheidung| OPA
-    Envoy -->|allow| Backend
+    Frontend -->|"GET /api/* + Bearer Token"| Envoy
+    Envoy -->|"ext_authz: GET /authorize"| Sidecar
+    Sidecar -->|"JWKS / Token-Validierung"| Keycloak
+    Sidecar -.->|"OIDC-Mock Demo-Mode"| WireMock
+    Sidecar -->|"Rollen anreichern"| RoleService[Role-Enhance-Service]
+    Sidecar -->|"Policy evaluieren"| OPA
+    Envoy -->|"allow → weiterleiten"| Backend
 
-    Frontend -->|/userinfo direkt| Backend
-
-    Frontend -->|optional spaeter| Keycloak
-    Sidecar -->|Token-Validierung| Keycloak
+    Frontend -->|"GET /userinfo + Bearer Token"| Sidecar
 ```
 
 In Worten:
-- Das Frontend schickt `/api/*`-Requests an Envoy.
-- Envoy fragt den Sidecar via `ext_authz`, ob der Request erlaubt ist.
-- Der Sidecar validiert den Token (Keycloak), holt Rollen (Role-Enhance-Service) und fragt OPA.
-- Nur bei "erlaubt" leitet Envoy zum Backend weiter.
-- `/userinfo` geht vom Frontend **direkt** zum Backend — ohne Envoy und Sidecar.
+- Der Browser meldet sich per OIDC bei Keycloak an und bekommt einen Bearer Token.
+- Das Frontend schickt `/api/*`-Requests mit dem Token an Envoy.
+- Envoy delegiert die Autorisierungsentscheidung via `ext_authz` an den Sidecar (`GET /authorize`).
+- Der Sidecar validiert den Token gegen Keycloak (JWKS), reichert Rollen über den Role-Enhance-Service an und evaluiert die OPA-Policy.
+- Bei Erlaubnis (HTTP 200) leitet Envoy den Request an das Backend weiter. Bei Ablehnung antwortet Envoy mit 401/403.
+- `/userinfo` geht direkt an den Sidecar — dieser hat einen eigenen `/userinfo`-Endpunkt, der Token, Rollen und Permissions strukturiert zurückgibt.
+- Im Demo-Mode ersetzt WireMock Keycloak als OIDC-Provider (gestrichelte Linie).
 
 ---
 
